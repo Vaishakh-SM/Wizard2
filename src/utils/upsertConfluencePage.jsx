@@ -3,10 +3,10 @@ import api, { route } from "@forge/api";
 const WIZARD_DEFAULT_TITLE = "Wizard Alerts";
 
 export const upsertConfluencePage = async (req) => {
-  console.log("UPSERT CALLED!");
-  const spaceKey = req.modifiedTeamId;
-  const pageName = req.label;
-  const alertData = req.message;
+  console.log("UPSERT CALLED! with request, ", req);
+  const spaceKey = req.payload.modifiedTeamId;
+  const pageName = req.payload.label;
+  const alertData = req.payload.message;
 
   const spaceId = await getSpaceIdWithKey(spaceKey);
   // console.log("SPACE ID: ", spaceId);

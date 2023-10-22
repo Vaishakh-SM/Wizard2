@@ -33,18 +33,16 @@ import Form, {
 import { DynamicTableStateless } from "@atlaskit/dynamic-table";
 
 import TextArea from "@atlaskit/textarea";
-import { createHead, createRows } from "./tableContent";
+import { AlertsTable, createHead, createRows } from "./tableContent";
 
 const App = () => {
   const [isNotifyOpen, setNotifyOpen] = useState(false);
   const [apiData, setApiData] = useState([]);
   const [alerts, setAlerts] = useState([]);
   const [editedAlertId, setEditedAlertId] = useState(null);
-  const [labels, setlabels] = useState(["API-Depreciation", "Library-Changes"]);
-  const [updateAlerts, setUpdateAlerts] = useState(0);
+  const [labels, setLabels] = useState(["API-Depreciation", "Library-Changes"]);
   const [isLabelOpen, setLabelOpen] = useState(false);
   const [sendAlertId, setSendAlertId] = useState(null);
-  const [pageNumber, setPageNumber] = useState(1);
 
   const handleEditAlert = (alertId) => {
     setEditedAlertId(alertId);
@@ -101,19 +99,24 @@ const App = () => {
 
   useEffect(async () => {
     // const confluencePages = await getConfluencePages();
-    // await invoke("setLabels", labels);
+
     setInterval(async () => {
-      const alertData = await invoke("getAlertsFromStorage");
+      let alertData = await invoke("getAlertsFromStorage");
+      if (!Array.isArray(alertData)) {
+        alertData = [];
+      }
       console.log("Alert data: ", alertData);
       setAlerts(alertData);
-    }, 2000);
+    }, 5000);
+
+    const existingLabels = await invoke("getLabelsFromStorage");
+    console.log("LABELS:", existingLabels);
+    if (!Array.isArray(existingLabels)) await invoke("setLabels", labels);
+    else setLabels(existingLabels);
+
     const confluencePages = await invoke("getConfluencePages");
     setApiData(confluencePages);
     console.log(confluencePages);
-
-    const existingArray = await invoke("getLabelsFromStorage");
-    if (existingArray) setlabels(existingArray);
-    else await await invoke("setLabels", labels);
   }, []);
 
   return (
@@ -138,17 +141,14 @@ const App = () => {
             <ModalBody>
               <Form
                 onSubmit={async (formData) => {
-                  console.log("ID: ", formData.customTranscripts);
+                  console.log("ask Wizard formdata: ", formData);
                   // const alertData = await getAlertsForTranscript(
                   //   formData.customTranscripts
                   // );
 
                   await invoke("getAlertsForTranscript", {
                     pageData: formData.customTranscripts,
-                    cloudId: productContext.cloudId,
                   });
-                  const alertData = await invoke("getAlertsFromStorage");
-                  setAlerts(alertData);
                 }}
               >
                 {({ formProps, submitting }) => (
@@ -156,16 +156,13 @@ const App = () => {
                     <FormSection>
                       <Field
                         name="customTranscripts"
-                        label="Enter your message here"
+                        label="What do you want to ask wizard?"
                       >
-                        {(fieldProps) => (
-                          <TextArea {...fieldProps} defaultValue="Type..." />
-                        )}
+                        {({ fieldProps }) => <Textfield {...fieldProps} />}
                       </Field>
                     </FormSection>
                     <FormFooter>
                       <ButtonGroup>
-                        <Button appearance="subtle">Cancel</Button>
                         <LoadingButton
                           type="submit"
                           appearance="primary"
@@ -192,8 +189,6 @@ const App = () => {
       <Form
         onSubmit={async (formData) => {
           console.log("ID: ", formData.PageId.label);
-          // const pageData = await getConfluencePageContent(formData.id);
-          // setAlertFormData(0);
           const pageData = await invoke(
             "getConfluencePageContent",
             formData.PageId.value
@@ -202,10 +197,6 @@ const App = () => {
           await invoke("getAlertsForTranscript", {
             pageData: pageData,
           });
-          // const jobId = await importQueue.push({
-          //   pageData: pageData,
-          //   cloudId: productContext.cloudId,
-          // });
         }}
       >
         {({ formProps, submitting }) => (
@@ -229,145 +220,69 @@ const App = () => {
             </Field>
             <FormFooter>
               <ButtonGroup>
-                <Button appearance="subtle">Cancel</Button>
                 <LoadingButton
                   type="submit"
                   appearance="primary"
                   isLoading={submitting}
                 >
-                  Submit
+                  Get Alerts
                 </LoadingButton>
               </ButtonGroup>
             </FormFooter>
           </form>
         )}
       </Form>
-      <DynamicTableStateless
-        head={createHead()}
-        rows={createRows(alerts, handleSendAlert)}
-        rowsPerPage={5}
-        page={pageNumber}
-        loadingSpinnerSize="large"
-        isLoading={false}
-        isFixedSize
-        onSort={() => console.log("onSort")}
-        onSetPage={() => console.log("onSetPage")}
-      />
-      {/* <Table>
-        <Head>
-          <Cell>Alert</Cell>
-          <Cell>Teams</Cell>
 
-          <Cell>Label</Cell>
-
-          <Cell>Send</Cell>
-
-          <Cell>Edit</Cell>
-
-          <Cell>Delete</Cell>
-        </Head>
-        {alerts.map((alert) => (
-          <Row>
-            <Cell>{alert.message}</Cell>
-            <Cell>
-              {alert.componentNames.map((team, index) => (
-                <div>
-                  {index > 0 && " "}
-                  {team}
-                </div>
-              ))}
-            </Cell>
-
-            <Cell>{alert.label}</Cell>
-
-            <Cell>
-              <Button
-                text="Send"
-                onClick={async () => {
-                  await handleSendAlert(alert.id);
-                }}
-              />
-            </Cell>
-
-            <Cell>
-              <Button
-                text="Edit the Alert"
-                onClick={() => handleEditAlert(alert.id)}
-              />
-              {editedAlertId === alert.id && (
-                <ModalDialog
-                  header="Edit the Alert"
-                  onClose={() => setEditedAlertId(null)}
-                >
-                  <Form
-                    onSubmit={handleSubmitEditAlert}
-                    submitButtonText="Save"
-                  >
-                    <Textfield
-                      label="Edit Alert"
-                      name="editedAlert"
-                      defaultValue={alert.message}
-                    />
-
-                    <Select
-                      label="Select Teams"
-                      name="selectedTeams"
-                      isMulti
-                      options={() =>
-                        alert.teamIds.map((team) => ({
-                          value: team,
-                          label: team,
-                        }))
-                      }
-                    />
-                  </Form>
-                </ModalDialog>
-              )}
-            </Cell>
-
-            <Cell>
-              <Button
-                text="Delete"
-                onClick={() => handleDeleteAlert(alert.id)}
-              />
-            </Cell>
-          </Row>
-        ))}
-      </Table> */}
+      <AlertsTable />
 
       {isLabelOpen && (
         <ModalTransition>
           <Modal onClose={() => setLabelOpen(false)}>
-            <ModalHeader>Labels</ModalHeader>
+            <ModalHeader>
+              <ModalTitle>Add Label</ModalTitle>
+            </ModalHeader>
             <ModalBody>
-              {/* <Form
+              <Form
                 onSubmit={async (formData) => {
-                  console.log("Label: ", formData.createLabel);
-                  const existingArray = await invoke("getLabelsFromStorage");
+                  console.log("Label: ", formData.label);
+                  let existingLabels = await invoke("getLabelsFromStorage");
 
                   // Append a value to the array
-                  existingArray.push(formData.createLabel);
+                  existingLabels.push(formData.label);
 
                   // Set the modified array back to storage
-                  await invoke("setLabels", existingArray);
+                  await invoke("setLabels", existingLabels);
 
-                  console.log("Array with appended value:", existingArray);
-                  setlabels(existingArray);
+                  console.log("Array with appended value:", existingLabels);
+                  setLabels(existingLabels);
                 }}
               >
-                <FormSection>
-                  <Field label="Search your label" name="id">
-                    <Select
-                      options={() =>
-                        labels.map((label, index) => {
-                          return { value: index, label: label };
-                        })
-                      }
-                    />
-                  </Field>
-                </FormSection>
-                <Textfield name="createLabel" defaultValue="Add a new Label" />
-              </Form> */}
+                {({ formProps, submitting }) => (
+                  <form {...formProps}>
+                    <FormSection>
+                      <Field
+                        name="label"
+                        label="Write a label name"
+                        defaultValue=""
+                      >
+                        {({ fieldProps }) => <Textfield {...fieldProps} />}
+                      </Field>
+                    </FormSection>
+
+                    <FormFooter>
+                      <ButtonGroup>
+                        <LoadingButton
+                          type="submit"
+                          appearance="primary"
+                          isLoading={submitting}
+                        >
+                          Add
+                        </LoadingButton>
+                      </ButtonGroup>
+                    </FormFooter>
+                  </form>
+                )}
+              </Form>
             </ModalBody>
           </Modal>
         </ModalTransition>
