@@ -1,0 +1,48 @@
+modules:
+  confluence:spacePage:
+    - key: wizard-hello-world
+      resource: main
+      resolver:
+        function: resolver
+      title: Wizard
+      route: frontend
+  consumer:
+    - key: alerts-consumer
+      queue: alerts-queue
+      resolver:
+        function: queue-fn
+        method: event-listener
+  function:
+    - key: queue-fn
+      handler: consumer.handler
+    - key: resolver
+      handler: uiResolvers.handler
+resources:
+  - key: main
+    path: static/frontend/build
+app:
+  id: ari:cloud:ecosystem::app/72406424-6a34-45fb-9678-995fe95dd42f
+
+permissions:
+  scopes:
+    - storage:app
+    - read:page:confluence
+    - write:page:confluence
+    - search:confluence
+    - read:confluence-space.summary
+    - read:confluence-content.summary
+    - read:component:compass
+    - read:me
+    - read:account
+    - read:space:confluence
+    - write:confluence-content
+  content:
+    scripts:
+      - unsafe-inline
+      - unsafe-hashes
+    styles:
+      - unsafe-inline
+  external:
+    fetch:
+      backend:
+        - "https://api.openai.com"

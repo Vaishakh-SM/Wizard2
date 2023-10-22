@@ -1,0 +1,17 @@
+{
+  "name": "confluence-space-page-custom-ui",
+  "version": "1.0.30",
+  "main": "index.js",
+  "license": "MIT",
+  "private": true,
+  "devDependencies": {
+    "eslint": "^8.51.0",
+    "eslint-plugin-react-hooks": "^4.6.0"
+  },
+  "dependencies": {
+    "@atlassian/forge-graphql": "^13.3.8",
+    "@forge/api": "^2.19.3",
+    "@forge/events": "^0.8.20",
+    "@forge/resolver": "^1.5.19"
+  }
+}
