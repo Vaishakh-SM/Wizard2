@@ -99,7 +99,7 @@ const callOpenAI = async (chats) => {
   const options = {
     method: "POST",
     headers: {
-      Authorization: `Bearer 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`,
+      Authorization: `Bearer `,
       "Content-Type": "application/json",
     },
     redirect: "follow",
@@ -172,7 +172,7 @@ const callOpenAIfin = async (msg) => {
   const options = {
     method: "POST",
     headers: {
-      Authorization: `Bearer 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`,
+      Authorization: `Bearer `,
       "Content-Type": "application/json",
     },
     redirect: "follow",
