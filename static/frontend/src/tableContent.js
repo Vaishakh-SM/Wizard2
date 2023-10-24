@@ -23,14 +23,12 @@ export const createHead = () => {
       {
         key: "labels",
         content: "Labels",
-        isSortable: true,
         width: 10,
       },
       {
         key: "teams",
         content: "Teams",
         shouldTruncate: true,
-        isSortable: true,
         width: 15,
       },
       {
@@ -62,7 +60,7 @@ export const createRows = (alerts, handleSendAlert) => {
       cells: [
         {
           key: createKey(el.message),
-          content: el.message,
+          content: <strong>{el.message}</strong>,
         },
         {
           key: createKey(el.label),
@@ -90,22 +88,7 @@ export const createRows = (alerts, handleSendAlert) => {
         },
         {
           key: "send",
-          content: (
-            // <Button
-            //   onClick={async () => {
-            //     console.log(
-            //       "Clicked, will call handleSend Alert with ID: ",
-            //       el
-            //     );
-            //     console.log("Clicked with alerts: ", alerts);
-            //     await handleSendAlert(alerts, el.id);
-            //   }}
-            // >
-            //   Send
-            // </Button>
-
-            <SendButton alerts={alerts} el={el} />
-          ),
+          content: <SendButton alerts={alerts} el={el} />,
         },
         // {
         //   key: "edit",
@@ -118,7 +101,7 @@ export const createRows = (alerts, handleSendAlert) => {
       ],
     };
   });
-  console.log("RETURNING: ", retVal);
+
   return retVal;
 };
 
@@ -130,7 +113,6 @@ const handleSendAlert = async (alerts, id) => {
     teamIds: alert.teamIds,
     label: alert.label,
   }));
-  console.log("MATCHING ALERTS: ", result);
 
   const promises = result.map(async (data) => {
     return Promise.all(
@@ -150,9 +132,7 @@ const handleSendAlert = async (alerts, id) => {
 
 const SendButton = (props) => {
   const [state, setState] = useState(0);
-  useEffect(() => {
-    console.log("PROPS: ", props);
-  }, []);
+
   return (
     <div>
       {state == 0 && (
@@ -180,26 +160,25 @@ const SendButton = (props) => {
 };
 
 const boxStyles = xcss({
-  margin: "space.400",
+  marginTop: "space.600",
 });
 
 export const AlertsTable = () => {
   const [alerts, setAlerts] = useState([]);
 
   useEffect(async () => {
-    console.log("NEW TABLE");
     setInterval(async () => {
       let alertData = await invoke("getAlertsFromStorage");
       if (!Array.isArray(alertData)) {
         alertData = [];
       }
-      console.log("Alert data: ", alertData);
+
       setAlerts(alertData);
     }, 5000);
   }, []);
 
   return (
-    <Box padding="space.400" xcss={boxStyles}>
+    <Box xcss={boxStyles}>
       <DynamicTableStateless
         head={createHead()}
         rows={createRows(alerts, handleSendAlert)}

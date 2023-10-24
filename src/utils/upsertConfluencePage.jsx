@@ -1,15 +1,14 @@
 import api, { route } from "@forge/api";
+import { labelMap } from "../model/prompts";
 
 const WIZARD_DEFAULT_TITLE = "Wizard Alerts";
 
 export const upsertConfluencePage = async (req) => {
-  console.log("UPSERT CALLED! with request, ", req);
   const spaceKey = req.payload.modifiedTeamId;
   const pageName = req.payload.label;
   const alertData = req.payload.message;
 
   const spaceId = await getSpaceIdWithKey(spaceKey);
-  // console.log("SPACE ID: ", spaceId);
   const wizardPageId = await getPageIdWithTitle(WIZARD_DEFAULT_TITLE, spaceId);
 
   if (wizardPageId) {
@@ -17,14 +16,19 @@ export const upsertConfluencePage = async (req) => {
 
     if (pageId) {
       const pageData = await getPageContent(pageId);
-
-      console.log("Page data: ", pageData);
-
       let pageContent = pageData["content"];
       const pageVersion = await getPageVersion(pageId);
+      const messages = ["warning", "info", "note", "success"];
+
+      // Generate a random index within the array length
+      const index = Math.floor(Math.random() * messages.length);
+
+      // Get the random string based on the random index
+      const panelType = messages[index];
+
       pageContent.push({
         type: "panel",
-        attrs: { panelType: "info" },
+        attrs: { panelType: panelType },
         content: [
           {
             type: "paragraph",
@@ -36,7 +40,7 @@ export const upsertConfluencePage = async (req) => {
         ...pageData,
         content: pageContent,
       };
-      console.log("NEW PAGE DATA: ", newPageData);
+
       await updatePageContent(
         pageId,
         pageName,
@@ -45,17 +49,27 @@ export const upsertConfluencePage = async (req) => {
       );
     } else {
       await createPage(pageName, spaceId, wizardPageId);
-      await upsertConfluencePage(spaceKey, pageName, alertData);
+      await upsertConfluencePage({
+        payload: {
+          modifiedTeamId: spaceKey,
+          label: pageName,
+          message: alertData,
+        },
+      });
     }
   } else {
-    console.log("ELSE ENTERED");
     await createPage(WIZARD_DEFAULT_TITLE, spaceId);
-    await upsertConfluencePage(spaceKey, pageName, alertData);
+    await upsertConfluencePage({
+      payload: {
+        modifiedTeamId: spaceKey,
+        label: pageName,
+        message: alertData,
+      },
+    });
   }
 };
 
 export const getSpaceIdWithKey = async (spaceKey) => {
-  console.log("SPACE ID CALLED with key, ", spaceKey);
   const spaceResponse = await api
     .asUser()
     .requestConfluence(route`/wiki/api/v2/spaces?keys=${spaceKey}`, {
@@ -64,13 +78,9 @@ export const getSpaceIdWithKey = async (spaceKey) => {
       },
     });
 
-  console.log("SPACE RESPONSE: ", spaceResponse);
   const spaceData = await spaceResponse.json();
 
   const spaceId = spaceData["results"][0]["id"];
-  console.log("Space data: ", spaceData);
-  console.log("Space id", spaceId);
-
   return spaceId;
 };
 
@@ -86,11 +96,9 @@ export const getPageIdWithTitle = async (pageTitle, spaceId) => {
       }
     );
   const spacePageData = await spacePageResponse.json();
-  console.log("Space page data: ", spacePageData);
+
   if (spacePageData["results"][0]) {
     const pageId = spacePageData["results"][0]["id"];
-
-    console.log("Page id", pageId);
     return pageId;
   } else {
     return null;
@@ -123,8 +131,6 @@ export const createPage = async (pageTitle, spaceId, parentId) => {
       },
       body: bodyData,
     });
-
-  console.log("Create response: ", response);
 };
 
 const getPageContent = async (pageId) => {
@@ -180,8 +186,6 @@ const updatePageContent = async (
   };
 
   bodyData = JSON.stringify(bodyData);
-
-  console.log("Body data: ", bodyData);
   const response = await api
     .asUser()
     .requestConfluence(route`/wiki/api/v2/pages/${pageId}`, {
@@ -192,7 +196,4 @@ const updatePageContent = async (
       },
       body: bodyData,
     });
-
-  console.log(`UPDATE Response: ${response.status} ${response.statusText}`);
-  console.log(await response.json());
 };

@@ -1,5 +1,4 @@
-export const prompt1 = 
-`Hello, your role is that of a summarizer and classifier. You shall be provided with a meeting transcript from which you are supposed to extract valuable and significant information into 2 lines of concise holistic descriptions known as alerts. Examples of significant information could be anything related to updates, changes, experimentation, breakages, debugging, follow-ups, depreciations, generic, etc. While summarizing, omit the speaker information, and just focus on the information conveyed in a passive tone. You shall also be given a list of components, some of which could be the points of discussion in the meeting. This is where your role as a classifier comes in: your duty is to associate and classify each alert to exactly ONE and ONLY of the components from the provided list. If you feel that an alert can be mapped to more than one component, go with only one component, the one that most aptly fits the alert. Ensure that you extracts the alerts such that they can be associated with one of the components from the given list. All the Best ! Make Daddy Proud !\n\n
+export const prompt1 = `Hello, your role is that of a summarizer and classifier. You shall be provided with a meeting transcript from which you are supposed to extract valuable and significant information into 2 lines of concise holistic descriptions known as alerts. Examples of significant information could be anything related to updates, changes, experimentation, breakages, debugging, follow-ups, depreciations, generic, etc. While summarizing, omit the speaker information, and just focus on the information conveyed in a passive tone. You shall also be given a list of components, some of which could be the points of discussion in the meeting. This is where your role as a classifier comes in: your duty is to associate and classify each alert to exactly ONE and ONLY of the components from the provided list. If you feel that an alert can be mapped to more than one component, go with only one component, the one that most aptly fits the alert. Ensure that you extracts the alerts such that they can be associated with one of the components from the given list. All the Best ! Make Daddy Proud !\n\n
 
 Let us try to learn from the following example:\n\n
 
@@ -147,39 +146,38 @@ Example 3:\n\n
 
 List of Components:\n\n`;
 
+export const prompt2 =
+  "Now, From each of the above alerts that you have outputted, you need to label each of them to the most appropriate label, from the following list of labels:";
 
-export const prompt2 = 'Now, From each of the above alerts that you have outputted, you need to label each of them to the most appropriate label, from the following list of labels:';
-
-export const prompt3 = 'Also you need to classify each alert based on it '
+export const prompt3 = "Also you need to classify each alert based on it ";
 
 export const initialLabels = [
-    "API Deprecations",
-    "Security Patch",
-    "Breaking Database Change",
-    "Library Updates",
-    "Database Changes",
-    "Documentation Update",
-    "Code Review",
-    "Infrastructure",
-    "Bug Fix",
-    "Feature Enhancement",
-    "Performance Optimization",
-    "New Feature Development",
-    "General"
-  ];
+  "API Deprecations",
+  "Security Patch",
+  "Breaking Database Change",
+  "Library Updates",
+  "Database Changes",
+  "Documentation Update",
+  "Code Review",
+  "Infrastructure",
+  "Bug Fix",
+  "Feature Enhancement",
+  "Performance Optimization",
+  "New Feature Development",
+  "General",
+];
 export const labelMap = new Map([
-    ["API Deprecations", "warning"],
-    ["Security Patch", "warning"],
-    ["Breaking Database Change", "warning"],
-    ["Library Updates", "info"],
-    ["Database Changes", "info"],
-    ["General", "info"],
-    ["Documentation Update", "note"],
-    ["Code Review", "note"],
-    ["Infrastructure", "note"],
-    ["Bug Fix", "success"],
-    ["Feature Enhancement", "success"],
-    ["Performance Optimization", "success"],
-    ["New Feature Development", "success"]
-  ]);
-  
+  ["API Deprecations", "warning"],
+  ["Security Patch", "warning"],
+  ["Breaking Database Change", "warning"],
+  ["Library Updates", "info"],
+  ["Database Changes", "info"],
+  ["General", "info"],
+  ["Documentation Update", "note"],
+  ["Code review", "note"],
+  ["Infrastructure", "note"],
+  ["Bug Fix", "success"],
+  ["Feature Enhancement", "success"],
+  ["Performance Optimization", "success"],
+  ["New Feature Development", "success"],
+]);

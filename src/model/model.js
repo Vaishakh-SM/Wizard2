@@ -16,9 +16,7 @@ let pr2 = prompt2;
 
 export const getAlertsForTranscript = async (transcript, cloudId) => {
   // Use compass + transcript in the prompt
-  console.log("CloudID is : ", cloudId);
   const componentDetails = await getAllComponentDetails(cloudId);
-  console.log("Components are: ", componentDetails);
 
   let componentNames = Object.values(componentDetails).map(
     (component) => component.name
@@ -26,19 +24,13 @@ export const getAlertsForTranscript = async (transcript, cloudId) => {
 
   pr1 = pr1 + componentNames.join("\n");
 
-  // Create a string with component names separated by newline characters
-  console.log("Component Names:", componentNames);
-
   // Now get the labels from Forge database
   const labels = await storage.get("labels");
+
   const labels_string = labels.join("\n");
 
   const findata = await performInteractions(transcript, labels_string);
   let transcriptAlerts = findata;
-  // let transcriptAlerts = JSON.parse(
-  //   findata["message"]["function_call"]["arguments"]
-  // );
-  console.log("FINDATA: ", transcriptAlerts);
 
   const alertComponents = new Set();
   let componentNameSet = new Set(componentNames);
@@ -75,8 +67,6 @@ export const getAlertsForTranscript = async (transcript, cloudId) => {
       }
     });
   });
-  console.log("ALERT TEAMS: ", alertTeams);
-  console.log("TRANSCRIPT ALERTS BEFORE: ", transcriptAlerts);
 
   transcriptAlerts["alerts"] = transcriptAlerts["alerts"].map((el) => {
     if (alertTeams.hasOwnProperty(el.component)) {
@@ -93,13 +83,11 @@ export const getAlertsForTranscript = async (transcript, cloudId) => {
       };
     }
   });
-  console.log("Transcript Alerts: ", transcriptAlerts);
+
   return transcriptAlerts["alerts"];
 };
 
 const callOpenAI = async (chats) => {
-  console.log("Inside the API call");
-  //console.log(chats);
   const choiceCount = 1;
   const url = `https://api.openai.com/v1/chat/completions`;
   const payload = {
@@ -118,13 +106,9 @@ const callOpenAI = async (chats) => {
     body: JSON.stringify(payload),
   };
 
-  console.log("Before API Call");
-
   try {
     const response = await api.fetch(url, options);
     const data = await response.json();
-    console.log("API Call Successful !");
-    console.log(data);
 
     // Check if the response contains choices and messages
     if (data.choices && data.choices[0].message) {
@@ -141,8 +125,6 @@ const callOpenAI = async (chats) => {
 };
 
 const callOpenAIfin = async (msg) => {
-  console.log("Inside the FINAL API call");
-  console.log(msg);
   const choiceCount = 1;
   const url = `https://api.openai.com/v1/chat/completions`;
   const payload = {
@@ -200,10 +182,9 @@ const callOpenAIfin = async (msg) => {
   try {
     const response = await api.fetch(url, options);
     const data = await response.json();
-    console.log("FINAL API Call Successful !");
-    console.log(data);
+
     const messageContent = data.choices[0].message.content;
-    console.log(messageContent);
+
     return data; // Return the extracted JSON data
   } catch (error) {
     console.error("Error in API Call:", error);
@@ -221,35 +202,22 @@ async function performInteractions(transcript, labels_string) {
       const userMessage = pr1 + transcript; // User's message in this interaction
       chats.push({ role: "user", content: userMessage });
       assistantReply = await callOpenAI(chats);
-      console.log(`Assistant's reply 1: ${assistantReply}`);
+
       chats.push({ role: "assistant", content: assistantReply });
-      //console.log(chats);
     }
 
     if (i == 1) {
       const userMessage = pr2 + labels_string; // To get labels
       chats.push({ role: "user", content: userMessage });
       assistantReply = await callOpenAI(chats);
-      console.log(`Assistant's reply 2: ${assistantReply}`);
       msg = assistantReply;
       chats.push({ role: "assistant", content: assistantReply });
-      //console.log(chats);
     }
 
     if (i == 2) {
-      // const userMessage = assistantReply; // To get labels
-      // chats.push({ role: "user", content: userMessage });
-      // assistantReply = await callOpenAIfin(msg);
-      // console.log(`Assistant's reply 3: ${JSON.stringify(assistantReply)}`);
-      // chats.push({ role: "assistant", content: assistantReply });
-      // return assistantReply["choices"][0];
-
       return parseAlerts(msg);
     }
   }
-
-  // Here, you can access the entire conversation stored in the 'chats' array if needed.
-  //console.log('Full Conversation:', chats);
 }
 
 const getAlertsForJiraIssue = (jiraDesc) => {};

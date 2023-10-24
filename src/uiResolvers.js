@@ -13,12 +13,10 @@ resolver.define("upsertConfluencePage", upsertConfluencePage);
 resolver.define("getConfluencePages", getConfluencePages);
 
 resolver.define("getConfluencePageContent", async (req) => {
-  console.log("PAGEID: ", req);
   return await getConfluencePageContent(req.payload);
 });
 
 resolver.define("getAlertsForTranscript", async (req) => {
-  console.log("REQ IS ", req);
   await importQueue.push({
     pageData: req.payload.pageData,
     cloudId: req.context.cloudId,
@@ -34,7 +32,6 @@ resolver.define("getLabelsFromStorage", async () => {
 });
 
 resolver.define("setLabels", async (req) => {
-  console.log("FOR SETLABEL, req is : ", req);
   storage.set("labels", req.payload);
 });
 export const handler = resolver.getDefinitions();

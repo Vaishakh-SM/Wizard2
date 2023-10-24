@@ -8,6 +8,7 @@
     "@atlaskit/css-reset": "^6.5.4",
     "@atlaskit/dynamic-table": "^14.11.7",
     "@atlaskit/form": "^8.11.13",
+    "@atlaskit/icon": "^21.12.7",
     "@atlaskit/lozenge": "^11.4.5",
     "@atlaskit/modal-dialog": "^12.8.3",
     "@atlaskit/primitives": "^1.6.7",

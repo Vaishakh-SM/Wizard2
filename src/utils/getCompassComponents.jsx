@@ -2,7 +2,6 @@ import graphqlGateway from "@atlassian/forge-graphql";
 
 export const getCompassComponents = async (cloudId) => {
   try {
-    console.log("Call");
     const response = await graphqlGateway.compass.asApp().searchComponents({
       cloudId: cloudId,
     });
@@ -50,7 +49,6 @@ export async function getAllComponentDetails(cloudId) {
       };
       componentDetails[el.id] = newValue;
     });
-    console.log("MAP: ", componentDetails);
 
     return componentDetails;
   } catch (error) {

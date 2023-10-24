@@ -7,6 +7,8 @@ import { invoke } from "@forge/bridge";
 import Select from "@atlaskit/select";
 import Button from "@atlaskit/button";
 import Textfield from "@atlaskit/textfield";
+import PremiumIcon from "@atlaskit/icon/glyph/premium";
+import LabelIcon from "@atlaskit/icon/glyph/label";
 import Modal, {
   ModalBody,
   ModalFooter,
@@ -31,7 +33,7 @@ import Form, {
   Label,
 } from "@atlaskit/form";
 import { DynamicTableStateless } from "@atlaskit/dynamic-table";
-
+import { Box, Flex, Stack, xcss } from "@atlaskit/primitives";
 import TextArea from "@atlaskit/textarea";
 import { AlertsTable, createHead, createRows } from "./tableContent";
 
@@ -44,59 +46,6 @@ const App = () => {
   const [isLabelOpen, setLabelOpen] = useState(false);
   const [sendAlertId, setSendAlertId] = useState(null);
 
-  const handleEditAlert = (alertId) => {
-    setEditedAlertId(alertId);
-  };
-
-  const handleSubmitEditAlert = (formData) => {
-    let updatedAlerts = alerts.map((alert) =>
-      alert.id === editedAlertId
-        ? {
-            ...alert,
-            message: formData.editedAlert,
-            teamIds: formData.selectedTeams,
-          }
-        : alert
-    );
-
-    setAlerts(updatedAlerts); // Update the state with the modified alerts array
-    setEditedAlertId(null); // Clear the edited alert ID
-  };
-
-  const handleSendAlert = async (id) => {
-    // Code to send to diff confluence pages.
-
-    // Filter the alerts array to find elements with a matching "id"
-    const matchingAlerts = alerts.filter((alert) => alert.id === id);
-
-    const result = matchingAlerts.map((alert) => ({
-      message: alert.message,
-      teamIds: alert.teamIds,
-      label: alert.label,
-    }));
-
-    const promises = result.map(async (data) => {
-      return Promise.all(
-        data.teamIds.map(async (teamId) => {
-          const modifiedTeamId = teamId.split("/")[1].replace(/-/g, "");
-          // await upsertConfluencePage(modifiedTeamId, data.label, data.message);
-          await invoke("upsertConfluencePage", {
-            modifiedTeamId: modifiedTeamId,
-            label: data.label,
-            message: data.message,
-          });
-        })
-      );
-    });
-
-    await Promise.all(promises);
-  };
-
-  const handleDeleteAlert = (alertId) => {
-    const updatedAlerts = alerts.filter((alert) => alert.id !== alertId);
-    setAlerts(updatedAlerts);
-  };
-
   useEffect(async () => {
     // const confluencePages = await getConfluencePages();
 
@@ -105,18 +54,15 @@ const App = () => {
       if (!Array.isArray(alertData)) {
         alertData = [];
       }
-      console.log("Alert data: ", alertData);
       setAlerts(alertData);
     }, 5000);
 
     const existingLabels = await invoke("getLabelsFromStorage");
-    console.log("LABELS:", existingLabels);
     if (!Array.isArray(existingLabels)) await invoke("setLabels", labels);
     else setLabels(existingLabels);
 
     const confluencePages = await invoke("getConfluencePages");
     setApiData(confluencePages);
-    console.log(confluencePages);
   }, []);
 
   return (
@@ -125,114 +71,77 @@ const App = () => {
         overflowY: "visible !important",
       }}
     >
-      <Button
-        onClick={() => {
-          setNotifyOpen(true);
-        }}
-      >
-        Ask Wizard
-      </Button>
-      <ModalTransition>
-        {isNotifyOpen && (
-          <Modal onClose={() => setNotifyOpen(false)}>
-            <ModalHeader>
-              <ModalTitle>Ask Wizard!</ModalTitle>
-            </ModalHeader>
-            <ModalBody>
-              <Form
-                onSubmit={async (formData) => {
-                  console.log("ask Wizard formdata: ", formData);
-                  // const alertData = await getAlertsForTranscript(
-                  //   formData.customTranscripts
-                  // );
+      <Flex justifyContent="space-between" alignItems="center">
+        <Box
+          xcss={xcss({
+            width: "50%",
+          })}
+        >
+          <Form
+            onSubmit={async (formData) => {
+              const pageData = await invoke(
+                "getConfluencePageContent",
+                formData.PageId.value
+              );
 
-                  await invoke("getAlertsForTranscript", {
-                    pageData: formData.customTranscripts,
-                  });
-                }}
-              >
-                {({ formProps, submitting }) => (
-                  <form {...formProps}>
-                    <FormSection>
-                      <Field
-                        name="customTranscripts"
-                        label="What do you want to ask wizard?"
-                      >
-                        {({ fieldProps }) => <Textfield {...fieldProps} />}
-                      </Field>
-                    </FormSection>
-                    <FormFooter>
-                      <ButtonGroup>
-                        <LoadingButton
-                          type="submit"
-                          appearance="primary"
-                          isLoading={submitting}
-                        >
-                          Ask Wizard
-                        </LoadingButton>
-                      </ButtonGroup>
-                    </FormFooter>
-                  </form>
-                )}
-              </Form>
-            </ModalBody>
-          </Modal>
-        )}
-      </ModalTransition>
-      <Button
-        onClick={() => {
-          setLabelOpen(true);
-        }}
-      >
-        Add Label
-      </Button>
-      <Form
-        onSubmit={async (formData) => {
-          console.log("ID: ", formData.PageId.label);
-          const pageData = await invoke(
-            "getConfluencePageContent",
-            formData.PageId.value
-          );
-          console.log("PageData: ", pageData);
-          await invoke("getAlertsForTranscript", {
-            pageData: pageData,
-          });
-        }}
-      >
-        {({ formProps, submitting }) => (
-          <form {...formProps}>
-            <Field label="Select page" name="PageId">
-              {({ fieldProps: { id, ...rest }, error }) => {
-                console.log("ID FORM: ", id);
-                return (
-                  <div>
-                    <Select
-                      inputId={id}
-                      options={apiData.map((el) => {
-                        return { value: el.id, label: el.title };
-                      })}
-                      {...rest}
-                    />
-                    {error && <div>{error}</div>}
-                  </div>
-                );
-              }}
-            </Field>
-            <FormFooter>
-              <ButtonGroup>
-                <LoadingButton
-                  type="submit"
-                  appearance="primary"
-                  isLoading={submitting}
-                >
-                  Get Alerts
-                </LoadingButton>
-              </ButtonGroup>
-            </FormFooter>
-          </form>
-        )}
-      </Form>
+              await invoke("getAlertsForTranscript", {
+                pageData: pageData,
+              });
+            }}
+          >
+            {({ formProps, submitting }) => (
+              <form {...formProps}>
+                <Field label="Select page" name="PageId">
+                  {({ fieldProps: { id, ...rest }, error }) => {
+                    return (
+                      <div>
+                        <Select
+                          inputId={id}
+                          options={apiData.map((el) => {
+                            return { value: el.id, label: el.title };
+                          })}
+                          {...rest}
+                        />
+                        {error && <div>{error}</div>}
+                      </div>
+                    );
+                  }}
+                </Field>
+                <FormFooter>
+                  <ButtonGroup>
+                    <LoadingButton
+                      type="submit"
+                      appearance="primary"
+                      isLoading={submitting}
+                    >
+                      Get Alerts
+                    </LoadingButton>
+                  </ButtonGroup>
+                </FormFooter>
+              </form>
+            )}
+          </Form>
+        </Box>
+        <Stack space="space.150">
+          <Button
+            onClick={() => {
+              setNotifyOpen(true);
+            }}
+            iconBefore={<PremiumIcon label="" size="medium" />}
+          >
+            Ask Wizard
+          </Button>
 
+          <Button
+            onClick={() => {
+              setLabelOpen(true);
+            }}
+            iconBefore={<LabelIcon label="" size="medium" />}
+          >
+            Add Label
+          </Button>
+        </Stack>
+      </Flex>
       <AlertsTable />
 
       {isLabelOpen && (
@@ -244,7 +153,6 @@ const App = () => {
             <ModalBody>
               <Form
                 onSubmit={async (formData) => {
-                  console.log("Label: ", formData.label);
                   let existingLabels = await invoke("getLabelsFromStorage");
 
                   // Append a value to the array
@@ -253,7 +161,6 @@ const App = () => {
                   // Set the modified array back to storage
                   await invoke("setLabels", existingLabels);
 
-                  console.log("Array with appended value:", existingLabels);
                   setLabels(existingLabels);
                 }}
               >
@@ -287,6 +194,49 @@ const App = () => {
           </Modal>
         </ModalTransition>
       )}
+
+      <ModalTransition>
+        {isNotifyOpen && (
+          <Modal onClose={() => setNotifyOpen(false)}>
+            <ModalHeader>
+              <ModalTitle>Ask Wizard!</ModalTitle>
+            </ModalHeader>
+            <ModalBody>
+              <Form
+                onSubmit={async (formData) => {
+                  await invoke("getAlertsForTranscript", {
+                    pageData: formData.customTranscripts,
+                  });
+                }}
+              >
+                {({ formProps, submitting }) => (
+                  <form {...formProps}>
+                    <FormSection>
+                      <Field
+                        name="customTranscripts"
+                        label="What do you want to ask wizard?"
+                      >
+                        {({ fieldProps }) => <Textfield {...fieldProps} />}
+                      </Field>
+                    </FormSection>
+                    <FormFooter>
+                      <ButtonGroup>
+                        <LoadingButton
+                          type="submit"
+                          appearance="primary"
+                          isLoading={submitting}
+                        >
+                          Ask Wizard
+                        </LoadingButton>
+                      </ButtonGroup>
+                    </FormFooter>
+                  </form>
+                )}
+              </Form>
+            </ModalBody>
+          </Modal>
+        )}
+      </ModalTransition>
     </div>
   );
 };
